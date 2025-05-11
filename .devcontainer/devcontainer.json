@@ -14,5 +14,6 @@
       "ms-toolsai.jupyter"
     ]
   },
-  "remoteUser": "root"
+  "remoteUser": "root",
+  "postCreateCommand": "pip install /workspaces/Taro"
 }
