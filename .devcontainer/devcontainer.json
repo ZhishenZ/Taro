@@ -7,13 +7,19 @@
     "vscode": {
       "settings": {
         "terminal.integrated.defaultProfile.linux": "bash"
-      }
-    },
-    "extensions": [
-      "ms-python.python",
-      "ms-toolsai.jupyter"
-    ]
+      },
+      "extensions": [
+        "ms-python.python",
+        "ms-toolsai.jupyter",
+        "timonwong.shellcheck",
+        "ms-azuretools.vscode-docker"
+      ]
+    }
   },
+  "mounts": [
+    "source=${localEnv:HOME}/.ssh,target=/root/.ssh,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/.gitconfig,target=/root/.gitconfig,type=bind,consistency=cached"
+  ],
   "remoteUser": "root",
   "postCreateCommand": "pip install /workspaces/Taro"
 }
