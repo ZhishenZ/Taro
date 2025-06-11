@@ -1,8 +1,8 @@
 {
   "name": "TaroDev",
-  "build": {
-    "dockerfile": "Dockerfile"
-  },
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "dev",
+  "workspaceFolder": "/workspaces/Taro",
   "customizations": {
     "vscode": {
       "settings": {
@@ -16,10 +16,7 @@
       ]
     }
   },
-  "mounts": [
-    "source=${localEnv:HOME}/.ssh,target=/root/.ssh,type=bind,consistency=cached",
-    "source=${localEnv:HOME}/.gitconfig,target=/root/.gitconfig,type=bind,consistency=cached"
-  ],
+  // Mounts are now handled in docker-compose.yml
   "remoteUser": "root",
   "postCreateCommand": "pip install -e /workspaces/Taro"
 }
