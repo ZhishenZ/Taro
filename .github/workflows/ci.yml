@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: taro_user
+          POSTGRES_PASSWORD: taro_password
+          POSTGRES_DB: taro_stock
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U taro_user"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest psycopg2
+      - name: Wait for Postgres
+        run: |
+          until pg_isready -h localhost -U taro_user; do sleep 1; done
+      - name: Run tests
+        env:
+          PG: localhost
+          PGUSER: taro_user
+          PGPASSWORD: taro_password
+          PGDATABASE: taro_stock
+        run: pytest tests/test_postgress.py
