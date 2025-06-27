@@ -1,0 +1,28 @@
+version: '3.8'
+services:
+  # PostgreSQL
+  postgres:
+    image: postgres:15
+    # Stop container when IDE is closed, no auto-restart
+    restart: no
+    environment:
+      POSTGRES_USER: taro_user
+      POSTGRES_PASSWORD: taro_password
+      POSTGRES_DB: taro_stock
+    ports:
+      - 5432:5432
+
+  # dev container service
+  dev:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    volumes:
+      - ..:/workspaces/Taro
+      - ~/.ssh:/root/.ssh
+      - ~/.gitconfig:/root/.gitconfig
+    command: sleep infinity
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - postgres
