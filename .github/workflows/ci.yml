@@ -32,7 +32,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest psycopg2
+          pip install -e ".[dev]"
       - name: Wait for Postgres
         run: |
           until pg_isready -h localhost -U taro_user; do sleep 1; done
@@ -42,4 +42,5 @@ jobs:
           PGUSER: taro_user
           PGPASSWORD: taro_password
           PGDATABASE: taro_stock
-        run: pytest tests/test_postgress.py
+          PYTHONPATH: ${{ github.workspace }}
+        run: pytest tests/ -v

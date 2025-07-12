@@ -1,17 +1,8 @@
 import os
 import pytest
 import psycopg2
+from tests.db_config import DB_PARAMS
 
-# Database connection parameters
-DB_PARAMS = {
-    # Get the database host from the PG environment variable (used in GitHub CI); 
-    # default to "postgres" if not set
-    "host": os.environ.get("PG", "postgres"),
-    "port": 5432,
-    "user": "taro_user",
-    "password": "taro_password",
-    "dbname": "taro_stock"
-}
 
 @pytest.fixture
 def db_connection():
