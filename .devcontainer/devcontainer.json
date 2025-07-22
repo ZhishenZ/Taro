@@ -12,7 +12,8 @@
         "ms-python.python",
         "ms-toolsai.jupyter",
         "timonwong.shellcheck",
-        "ms-azuretools.vscode-docker"
+        "ms-azuretools.vscode-docker",
+        "DavidAnson.vscode-markdownlint"
       ]
     }
   },
