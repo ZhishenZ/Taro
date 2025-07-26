@@ -24,7 +24,7 @@ jobs:
       run: |
         ssh -i "~/.ssh/public_key.pem" ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
           cd ~/deploy
-          rm -f Taro
+          rm -rf Taro
         EOF
 
     - name: Clone code to EC2
