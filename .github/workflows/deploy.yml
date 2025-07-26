@@ -37,6 +37,8 @@ jobs:
     - name: Start taro in EC2
       run: |
         ssh -i "~/.ssh/public_key.pem" ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
+          cd ~
+          source venv/bin/activate
           cd ~/deploy/Taro
           pip install -e .
           taro
