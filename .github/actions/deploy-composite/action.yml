@@ -1,0 +1,65 @@
+name: "Deploy to EC2"
+description: "Uploads code to an EC2 instance and optionally runs a deploy script"
+inputs:
+  ec2_host:
+    description: "EC2 host (DNS or IP)"
+    required: true
+  ec2_key:
+    description: "Private SSH key"
+    required: true
+  remote_path:
+    description: "Path on EC2 to upload the code to"
+    required: true
+  start_taro:
+    description: "Whether to run deploy.sh on EC2 after upload"
+    required: false
+    default: "true"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up SSH key
+      shell: bash
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ inputs.ec2_key }}" > ~/.ssh/public_key.pem
+        chmod 400 ~/.ssh/public_key.pem
+        ssh-keyscan -H ${{ inputs.ec2_host }} >> ~/.ssh/known_hosts
+
+    - name: Remove old code in EC2
+      shell: bash
+      run: |
+        ssh -i "~/.ssh/public_key.pem" ec2-user@${{ inputs.ec2_host }} << 'EOF'
+          mkdir -p ${{ inputs.remote_path }}
+          cd ${{ inputs.remote_path }}
+          rm -rf Taro
+        EOF
+
+    - name: Clone code to EC2
+      shell: bash
+      run: |
+        ssh -i "~/.ssh/public_key.pem" ec2-user@${{ inputs.ec2_host }} << 'EOF'
+          cd ${{ inputs.remote_path }}
+          git clone https://github.com/ZhishenZ/Taro.git
+        EOF
+
+    - name: Install taro in EC2
+      shell: bash
+      run: |
+        ssh -i "~/.ssh/public_key.pem" ec2-user@${{ inputs.ec2_host }} << 'EOF'
+          cd ~
+          source venv/bin/activate
+          cd ${{ inputs.remote_path }}/Taro
+          pip install -e .
+        EOF
+
+    - name: Start taro in EC2
+      if: ${{ inputs.run_script == 'true' }}
+      shell: bash
+      run: |
+        ssh -i "~/.ssh/public_key.pem" ec2-user@${{ inputs.ec2_host }} << 'EOF'
+          cd ~
+          source venv/bin/activate
+          cd ${{ inputs.remote_path }}/Taro
+          taro
+        EOF

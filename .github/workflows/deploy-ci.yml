@@ -1,0 +1,19 @@
+name: Test Deploy to EC2
+
+on:
+  pull_request:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Deploy to EC2
+      uses: ./.github/actions/deploy-composite
+      with:
+        ec2_host: ${{ secrets.EC2_HOST }}
+        ec2_key: ${{ secrets.EC2_KEY }}
+        remote_path: "~/deploy_test"
