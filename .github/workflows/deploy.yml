@@ -20,11 +20,26 @@ jobs:
         chmod 400 ~/.ssh/public_key.pem
         ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-    - name: Upload code to EC2
+    - name: Remove old code in EC2
       run: |
         ssh -i "~/.ssh/public_key.pem" ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
-          cd ~
-          touch hi.txt
+          cd ~/deploy
+          rm -f Taro
+        EOF
+
+    - name: Clone code to EC2
+      run: |
+        ssh -i "~/.ssh/public_key.pem" ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
+          cd ~/deploy
+          git clone https://github.com/ZhishenZ/Taro.git
+        EOF
+
+    - name: Start taro in EC2
+      run: |
+        ssh -i "~/.ssh/public_key.pem" ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
+          cd ~/deploy/Taro
+          pip install -e .
+          taro
         EOF
 
     # - name: Run deploy script on EC2
