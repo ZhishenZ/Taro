@@ -9,6 +9,7 @@
         "terminal.integrated.defaultProfile.linux": "bash"
       },
       "extensions": [
+        "eamodio.gitlens",
         "ms-python.python",
         "ms-toolsai.jupyter",
         "timonwong.shellcheck",
