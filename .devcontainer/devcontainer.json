@@ -9,12 +9,14 @@
         "terminal.integrated.defaultProfile.linux": "bash"
       },
       "extensions": [
+        "DavidAnson.vscode-markdownlint",
         "eamodio.gitlens",
-        "ms-python.python",
-        "ms-toolsai.jupyter",
-        "timonwong.shellcheck",
         "ms-azuretools.vscode-docker",
-        "DavidAnson.vscode-markdownlint"
+        "ms-python.python",
+        "ms-python.black-formatter",
+        "ms-toolsai.jupyter",
+        "oderwat.indent-rainbow",
+        "timonwong.shellcheck"
       ]
     }
   },
