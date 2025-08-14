@@ -38,9 +38,11 @@ jobs:
           until pg_isready -h localhost -U taro_user; do sleep 1; done
       - name: Run tests
         env:
-          PG: localhost
-          PGUSER: taro_user
-          PGPASSWORD: taro_password
-          PGDATABASE: taro_stock
+          DB_HOST: localhost
+          DB_USER: taro_user
+          DB_PASSWORD: taro_password
+          DB_NAME: taro_stock
           PYTHONPATH: ${{ github.workspace }}
-        run: pytest tests/ -v
+        run: | 
+          python -m alembic upgrade head
+          pytest tests/ -v

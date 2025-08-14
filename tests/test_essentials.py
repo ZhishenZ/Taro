@@ -7,7 +7,7 @@ import pytest
 import subprocess
 from pathlib import Path
 from sqlalchemy import create_engine, text, inspect
-
+from taro.paths import Taro_path
 
 class TestDatabase:
     """Essential database tests."""
@@ -168,7 +168,7 @@ class TestDatabase:
             ["alembic", "current"],
             capture_output=True,
             text=True,
-            cwd="/workspaces/Taro"
+            cwd=Taro_path
         )
         assert result.returncode == 0
 
@@ -181,7 +181,7 @@ class TestDatabase:
             ["alembic", "check"],
             capture_output=True,
             text=True,
-            cwd="/workspaces/Taro"
+            cwd=Taro_path
         )
         assert result.returncode == 0
         assert "No new upgrade operations detected" in result.stdout
@@ -192,7 +192,7 @@ class TestDatabase:
             ["alembic", "history"],
             capture_output=True,
             text=True,
-            cwd="/workspaces/Taro"
+            cwd=Taro_path
         )
         assert result.returncode == 0
 
@@ -363,7 +363,7 @@ class TestMigrations:
 
     def test_migration_files_exist(self):
         """Test that migration files exist."""
-        versions_dir = Path("/workspaces/Taro/src/taro/migrations/versions")
+        versions_dir = Path(Taro_path/"src/taro/migrations/versions")
         migration_files = list(versions_dir.glob("*.py"))
         assert len(migration_files) > 0, "No migration files found"
 
