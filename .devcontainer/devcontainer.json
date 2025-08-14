@@ -22,5 +22,5 @@
   },
   // Mounts are now handled in docker-compose.yml
   "remoteUser": "root",
-  "postCreateCommand": "pip install -e /workspaces/Taro"
+  "postCreateCommand": "cd /workspaces/Taro && pip install -e . && python -m alembic check || python -m alembic revision --autogenerate -m 'auto_migration' && python -m alembic upgrade head"
 }

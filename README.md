@@ -1,130 +1,161 @@
 # Taro
 
-## Database Setup
+A modern stock analysis platform with automated PostgreSQL database schema management.
 
-### 1. Create the Database
+## 🚀 **Quick Start**
 
-First, log in to your PostgreSQL instance from the EC2 server:
+This project uses **dev containers** for consistent development environments and **Alembic** for automated database schema management.
 
-```sh
-psql -h <your-host>.rds.amazonaws.com -U taro_master -d postgres -p 5432
+### **1. Open in Dev Container**
+
+1. **Clone the repository**
+2. **Open in VS Code**
+3. **Rebuild in Container** (when prompted)
+4. **Database schema automatically initialized!** ✅
+
+### **2. Verify Setup**
+
+Run the comprehensive tests to verify everything is working:
+
+```bash
+# Test database schema and migrations
+python -m pytest tests/test_essentials.py -v
+
+# Check migration status
+alembic current
+alembic history
 ```
 
-Then create the database:
+## 📊 **Database Schema Management**
 
-```sql
-CREATE DATABASE tarodb;
+This project uses **Alembic** for automated database schema versioning and migrations.
+
+### **🔄 Automatic Schema Management**
+
+The dev container automatically:
+
+1. **Installs all dependencies** from `pyproject.toml`
+2. **Detects schema changes** with `alembic check`
+3. **Creates migrations** if models are updated
+4. **Applies migrations** to keep database in sync
+
+### **📋 Manual Migration Commands**
+
+For manual schema management:
+
+```bash
+# Check current migration status
+alembic current
+
+# View migration history
+alembic history
+
+# Check for pending schema changes
+alembic check
+
+# Create new migration (auto-generate from model changes)
+alembic revision --autogenerate -m "describe_your_changes"
+
+# Apply pending migrations
+alembic upgrade head
+
+# Rollback to previous migration
+alembic downgrade -1
 ```
 
-You can verify the database was created with:
+### **🏗️ Making Schema Changes**
 
-```sql
-\l
+1. **Edit models** in `src/taro/db/models.py`
+2. **Create migration**:
+
+   ```bash
+   alembic revision --autogenerate -m "add_new_column"
+   ```
+
+3. **Review generated migration** in `src/taro/migrations/versions/`
+4. **Apply migration**:
+
+   ```bash
+   alembic upgrade head
+   ```
+
+5. **Test changes**:
+
+   ```bash
+   python -m pytest tests/test_essentials.py::TestDatabase::test_table_structure -v
+   ```
+
+### **🧪 Schema Testing**
+
+Comprehensive test suite validates:
+
+```bash
+# Test all database functionality
+python -m pytest tests/test_essentials.py -v
+
+# Test specific areas
+python -m pytest tests/test_essentials.py::TestDatabase::test_schema_exists -v
+python -m pytest tests/test_essentials.py::TestDatabase::test_tables_exist -v
+python -m pytest tests/test_essentials.py::TestDatabase::test_models_match_database -v
+python -m pytest tests/test_essentials.py::TestMigrations -v
 ```
 
-You should see an entry like:
+### **⚙️ Configuration**
 
-```sh
- tarodb    | taro_master | UTF8     | en_US.UTF-8 | en_US.UTF-8 | 
-```
+Database connection configured via environment variables in `.env`:
 
-### 2. Configure Environment Variables
+```bash
+# PostgreSQL Configuration (Docker Compose)
+DATABASE_URL=postgresql://taro_user:taro_password@postgres:5432/taro_stock
 
-Create a `.env` file in the same directory as `create_db.py` with the following content (replace with your actual values):
-
-```sh
-DB_USER=taro_master
-DB_PASSWORD=your_password
-DB_HOST=your-host.rds.amazonaws.com
+# Alternative individual components
+DB_HOST=postgres
 DB_PORT=5432
-DB_NAME=tarodb
+DB_NAME=taro_stock
+DB_USER=taro_user
+DB_PASSWORD=taro_password
 ```
 
-**Note:**  
+### **🐳 Docker Integration**
 
-- Do **not** commit `.env` to version control. Add `.env` to your `.gitignore`.
+- **PostgreSQL 15** automatically available via Docker Compose
+- **Public schema** used for application tables
+- **Dev container** handles all setup
+- **Persistent volumes** maintain data between rebuilds
 
-### 3. Create Database Tables
+## 📊 **Database Models**
 
-Install the following dependencies:
+The database uses the **public schema** (default PostgreSQL schema) with the following tables:
 
-```sh
-pip3 install sqlalchemy
-pip3 install python-dotenv
-pip3 install psycopg2-binary
-```
+> **Note**: This project uses the default PostgreSQL schema (`public`) for simplicity. This provides easier development, deployment, and maintenance without the complexity of custom schemas.
 
-Run the following command in the `src/taro/db/` directory:
-
-```sh
-python3 create_db.py
-```
-
-This script will:
-
-- Load environment variables from `.env`
-- Connect to your PostgreSQL database
-- Create all tables defined in `models.py`
-- Print a success or error message
-
-If any required environment variable is missing, the script will raise an error and list the missing variables.
-
-### 4. Verify Table Creation
-
-Connect to your database:
-
-```sh
-psql -h <your-host>.rds.amazonaws.com -U taro_master -d tarodb -p 5432
-```
-
-List all tables:
-
-```sql
-\dt
-```
-
-You should see:
-
-```sql
- public | daily_metrics | table owner | ...
- public | fundamentals  | table owner | ...
-```
-
-You can inspect table structure with:
-
-```sql
-\d daily_metrics
-\d fundamentals
-```
-
-## Models
-
-### DailyMetrics
+### **DailyMetrics**
 
 Represents daily stock market metrics for a specific ticker.
 
-**Table Name:** `daily_metrics`
+**Table:** `daily_metrics`
 
 **Columns:**
 
-- `id` (Integer): Primary key
+- `id` (Integer): Primary key, auto-increment
 - `trade_date` (Date): Trading date, not nullable
 - `ticker` (String[10]): Stock ticker symbol, not nullable
 
 **Constraints:**
 
 - Unique constraint on (`trade_date`, `ticker`) combination
+- Primary key index on `id` (implicit)
 
-### Fundamentals
+### **Fundamentals**
 
 Stores fundamental stock data linked to daily metrics.
 
-**Table Name:** `fundamentals`
+**Table:** `fundamentals`
 
 **Columns:**
 
-- `id` (Integer): Primary key
-- `daily_metrics_id` (Integer): Foreign key to DailyMetrics
+- `id` (Integer): Primary key, auto-increment
+- `daily_metrics_id` (Integer): Foreign key to DailyMetrics, not nullable
 - `open_price` (Numeric(10,2)): Opening price
 - `high_price` (Numeric(10,2)): Highest price
 - `close_price` (Numeric(10,2)): Closing price
@@ -133,23 +164,96 @@ Stores fundamental stock data linked to daily metrics.
 
 **Relationships:**
 
-- One-to-one relationship with DailyMetrics through `daily_metrics_id`
-- Enforced by unique constraint on `daily_metrics_id`
+- One-to-one relationship with DailyMetrics via `daily_metrics_id`
+- Foreign key constraint ensures referential integrity
+- Unique constraint on `daily_metrics_id` enforces one-to-one relationship
 
-## Testing
+### **Schema Evolution**
 
-The models include comprehensive test coverage:
+All schema changes are managed through Alembic migrations:
 
-### Model Tests (`test_models.py`)
+```bash
+# View current models
+python -c "
+from taro.db.models import Base
+for table in Base.metadata.tables.values():
+    print(f'{table.name}: {[col.name for col in table.columns]}')
+    print(f'  Schema: {table.schema or \"public (default)\"}')
+"
 
-- Table creation verification
-- Column existence and properties validation
-- Relationship integrity checks
-- Data insertion and retrieval tests
+# Compare models vs database
+alembic check
+```
 
-### Database Tests (`test_postgress.py`)
+## 🧪 **Testing**
 
-- Connection reliability
-- Version verification
-- Basic query functionality
-- Database configuration validation
+Comprehensive test suite validates all database functionality and schema management.
+
+### **Database Tests**
+
+**File:** `tests/test_essentials.py`
+
+**TestDatabase Class:**
+
+- ✅ `test_connection` - Database connectivity
+- ✅ `test_models_import` - SQLAlchemy model imports
+- ✅ `test_schema_exists` - Public schema validation
+- ✅ `test_tables_exist` - Required tables present
+- ✅ `test_table_structure` - Column structure validation
+- ✅ `test_models_match_database` - Model-database synchronization
+- ✅ `test_database_crud_operations` - Insert, Select, Update, Delete operations
+
+**TestMigrations Class:**
+
+- ✅ `test_alembic_current_version` - Migration version tracking
+- ✅ `test_alembic_check_no_pending` - Schema synchronization
+- ✅ `test_alembic_history` - Migration history
+- ✅ `test_migration_files_exist` - Migration file presence
+- ✅ `test_alembic_version_table` - Version tracking table
+
+### **Running Tests**
+
+```bash
+# Run all database tests
+python -m pytest tests/test_essentials.py -v
+
+# Run specific test categories
+python -m pytest tests/test_essentials.py::TestDatabase -v
+python -m pytest tests/test_essentials.py::TestMigrations -v
+
+# Run specific tests
+python -m pytest tests/test_essentials.py::TestDatabase::test_database_crud_operations -v
+
+# Test with coverage (if pytest-cov installed)
+python -m pytest tests/ --cov=src --cov-report=term-missing
+```
+
+### **Test Environment**
+
+Tests automatically use the containerized PostgreSQL database:
+
+- **Database**: `taro_stock`
+- **Schema**: `public` (default)
+- **User**: `taro_user`
+- **Host**: `postgres` (Docker service)
+- **Port**: `5432`
+
+### **Continuous Testing**
+
+The test suite validates:
+
+1. **Schema Integrity** - Tables match models exactly
+2. **Migration Tracking** - Alembic version management working
+3. **CRUD Operations** - All database operations functional
+4. **Relationship Integrity** - Foreign keys and constraints working
+5. **Data Types** - Column types and constraints correct
+
+**Example test output:**
+
+```bash
+====== test session starts ======
+tests/test_essentials.py::TestDatabase::test_connection PASSED
+tests/test_essentials.py::TestDatabase::test_schema_exists PASSED
+tests/test_essentials.py::TestDatabase::test_alembic_current_version PASSED
+====== 12 passed in 2.21s ======
+```
