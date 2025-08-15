@@ -7,6 +7,7 @@ from alembic import context
 
 # Import models from db/models
 from taro.db.models import Base
+from taro.utils import get_database_url
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -18,26 +19,6 @@ if config.config_file_name is not None:
 
 # Use db models metadata for unified schema
 target_metadata = Base.metadata
-
-
-def get_database_url():
-    """Get PostgreSQL database URL from environment variables.
-
-    Works in both development (Docker) and production/CI environments.
-    """
-    # Check for full DATABASE_URL first (common in CI/CD)
-    database_url = os.getenv('DATABASE_URL')
-    if database_url:
-        return database_url
-
-    # Fall back to individual components
-    host = os.getenv('DB_HOST', 'postgres')  # Default to Docker service name
-    port = os.getenv('DB_PORT', '5432')
-    name = os.getenv('DB_NAME', 'taro_stock')
-    user = os.getenv('DB_USER', 'taro_user')
-    password = os.getenv('DB_PASSWORD', 'taro_password')
-
-    return f"postgresql://{user}:{password}@{host}:{port}/{name}"
 
 
 def run_migrations_offline():

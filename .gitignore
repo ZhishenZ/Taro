@@ -1,4 +1,6 @@
 __pycache__
 *.egg-info
 /build
+/logs
+/deploy_service/output
 .env

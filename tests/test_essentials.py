@@ -7,7 +7,7 @@ import pytest
 import subprocess
 from pathlib import Path
 from sqlalchemy import create_engine, text, inspect
-from taro.paths import Taro_path
+from taro.paths import Taro_dir
 
 class TestDatabase:
     """Essential database tests."""
@@ -21,15 +21,17 @@ class TestDatabase:
 
     def test_models_import(self):
         """Test that models can be imported successfully."""
-        from taro.db.models import Base, DailyMetrics, Fundamentals
+        from taro.db.models import Base, TradeDate, Company, DailyMetrics, Fundamentals
 
         assert Base is not None
+        assert TradeDate is not None
+        assert Company is not None
         assert DailyMetrics is not None
         assert Fundamentals is not None
 
         # Verify tables are available in metadata
         tables = Base.metadata.tables
-        assert len(tables) >= 2
+        assert len(tables) >= 4  # trade_date, company, daily_metrics, fundamentals
 
         # Models now use default (public) schema, so schema should be None
         for table_name, table in tables.items():
@@ -168,7 +170,7 @@ class TestDatabase:
             ["alembic", "current"],
             capture_output=True,
             text=True,
-            cwd=Taro_path
+            cwd=Taro_dir
         )
         assert result.returncode == 0
 
@@ -181,7 +183,7 @@ class TestDatabase:
             ["alembic", "check"],
             capture_output=True,
             text=True,
-            cwd=Taro_path
+            cwd=Taro_dir
         )
         assert result.returncode == 0
         assert "No new upgrade operations detected" in result.stdout
@@ -192,169 +194,106 @@ class TestDatabase:
             ["alembic", "history"],
             capture_output=True,
             text=True,
-            cwd=Taro_path
+            cwd=Taro_dir
         )
         assert result.returncode == 0
 
     def test_database_crud_operations(self, database_url):
         """Test basic CRUD operations work with actual model structure."""
-        from taro.db.models import Base, DailyMetrics, Fundamentals
+        from taro.db.models import Base, TradeDate, Company, DailyMetrics, Fundamentals
         from sqlalchemy.orm import sessionmaker
-        from sqlalchemy import Integer, String, Date, Numeric
         from datetime import date
-        import uuid
+        from decimal import Decimal
 
         engine = create_engine(database_url)
         Session = sessionmaker(bind=engine)
 
         with Session() as session:
-            # Dynamically create test data based on model structure
-            dm_table = Base.metadata.tables.get('daily_metrics')
-            dm_kwargs = {}
+            # CREATE: First create prerequisite TradeDate and Company records
+            trade_date = TradeDate(trade_date=date(2024, 1, 15))
+            session.add(trade_date)
+            session.flush()  # Get the ID
 
-            # Generate unique test identifier to avoid conflicts
-            test_id = str(uuid.uuid4())[:8]            # Populate DailyMetrics with appropriate test values based on column types
-            for col in dm_table.columns:
-                if not col.primary_key and not col.foreign_keys:  # Skip auto-generated and FK columns
-                    if isinstance(col.type, Date):
-                        dm_kwargs[col.name] = date(2024, 1, 1)
-                    elif isinstance(col.type, String):
-                        # Respect column length constraints
-                        max_length = getattr(col.type, 'length', None)
-                        if max_length:
-                            # Use shorter unique value that fits in the column
-                            value = f"T{test_id}"[:max_length]
-                        else:
-                            value = f"TEST_{test_id}"
-                        dm_kwargs[col.name] = value
-                    elif isinstance(col.type, Integer):
-                        dm_kwargs[col.name] = 12345
-                    elif isinstance(col.type, Numeric):
-                        dm_kwargs[col.name] = 123.45
+            company = Company(company_ticker="TEST")
+            session.add(company)
+            session.flush()  # Get the ID
 
-            # Create DailyMetrics instance
-            dm = DailyMetrics(**dm_kwargs)
+            # Create DailyMetrics with foreign keys
+            dm = DailyMetrics(
+                trade_date_id=trade_date.trade_date_id,
+                company_id=company.company_id
+            )
             session.add(dm)
             session.flush()  # Get the ID
 
-            # Dynamically create Fundamentals test data
-            fund_table = Base.metadata.tables.get('fundamentals')
-            fund_kwargs = {}
-
-            for col in fund_table.columns:
-                if not col.primary_key:  # Include FK columns but skip auto-generated primary keys
-                    if col.foreign_keys:
-                        # This is a foreign key - use the DailyMetrics ID
-                        fund_kwargs[col.name] = dm.id
-                    elif isinstance(col.type, Numeric):
-                        # Generate different test values for different price/volume fields
-                        if 'open' in col.name.lower():
-                            fund_kwargs[col.name] = 100.50
-                        elif 'high' in col.name.lower():
-                            fund_kwargs[col.name] = 110.75
-                        elif 'close' in col.name.lower():
-                            fund_kwargs[col.name] = 105.25
-                        elif 'low' in col.name.lower():
-                            fund_kwargs[col.name] = 95.80
-                        elif 'volume' in col.name.lower():
-                            fund_kwargs[col.name] = 50000.00
-                        else:
-                            fund_kwargs[col.name] = 100.00  # Default numeric value
-                    elif isinstance(col.type, Date):
-                        fund_kwargs[col.name] = date(2024, 1, 1)
-                    elif isinstance(col.type, String):
-                        # Respect column length constraints
-                        max_length = getattr(col.type, 'length', None)
-                        if max_length:
-                            value = f"T{test_id}"[:max_length]
-                        else:
-                            value = f"TEST_{test_id}"
-                        fund_kwargs[col.name] = value
-                    elif isinstance(col.type, Integer):
-                        fund_kwargs[col.name] = 1000
-
-            # Create Fundamentals instance
-            fund = Fundamentals(**fund_kwargs)
+            # Create Fundamentals with foreign key to DailyMetrics
+            fund = Fundamentals(
+                daily_metrics_id=dm.id,
+                open_price=100.50,
+                high_price=110.75,
+                close_price=105.25,
+                low_price=95.80,
+                volume=50000
+            )
             session.add(fund)
             session.commit()
 
-            # Test SELECT - dynamically verify all non-auto fields
-            string_filters = {k: v for k, v in dm_kwargs.items() if isinstance(v, str)}
-            retrieved_dm = session.query(DailyMetrics).filter_by(**string_filters).first()
-            assert retrieved_dm is not None
+            # READ: Test SELECT and verify data
+            retrieved_trade_date = session.query(TradeDate).filter_by(
+                trade_date_id=trade_date.trade_date_id
+            ).first()
+            assert retrieved_trade_date is not None
+            assert retrieved_trade_date.trade_date == date(2024, 1, 15)
 
-            # Verify all set attributes match
-            for attr_name, expected_value in dm_kwargs.items():
-                actual_value = getattr(retrieved_dm, attr_name)
-                assert actual_value == expected_value, f"DailyMetrics.{attr_name}: expected {expected_value}, got {actual_value}"
+            retrieved_company = session.query(Company).filter_by(
+                company_id=company.company_id
+            ).first()
+            assert retrieved_company is not None
+            assert retrieved_company.company_ticker == "TEST"
+
+            retrieved_dm = session.query(DailyMetrics).filter_by(id=dm.id).first()
+            assert retrieved_dm is not None
+            assert retrieved_dm.trade_date_id == trade_date.trade_date_id
+            assert retrieved_dm.company_id == company.company_id
 
             # Test Fundamentals SELECT and verify FK relationship
             retrieved_fund = session.query(Fundamentals).filter_by(daily_metrics_id=dm.id).first()
             assert retrieved_fund is not None
             assert retrieved_fund.daily_metrics_id == dm.id
 
-            # Dynamically verify Fundamentals attributes
-            from decimal import Decimal
-            for attr_name, expected_value in fund_kwargs.items():
-                if not attr_name.endswith('_id') or attr_name == 'daily_metrics_id':  # Verify all including FK
-                    actual_value = getattr(retrieved_fund, attr_name)
+            # Verify Fundamentals values
+            assert float(retrieved_fund.open_price) == 100.50
+            assert float(retrieved_fund.high_price) == 110.75
+            assert float(retrieved_fund.close_price) == 105.25
+            assert float(retrieved_fund.low_price) == 95.80
+            assert retrieved_fund.volume == 50000
 
-                    # Handle Decimal comparison for numeric fields
-                    if isinstance(actual_value, Decimal) and isinstance(expected_value, (int, float)):
-                        actual_value = float(actual_value)
-                    elif isinstance(expected_value, Decimal) and isinstance(actual_value, (int, float)):
-                        expected_value = float(expected_value)
+            # Test relationship access
+            assert retrieved_dm.fundamentals is not None
+            assert retrieved_dm.fundamentals.daily_metrics_id == dm.id
 
-                    assert actual_value == expected_value, f"Fundamentals.{attr_name}: expected {expected_value}, got {actual_value}"
-
-            # Test relationship access if it exists
-            if hasattr(retrieved_dm, 'fundamentals'):
-                assert retrieved_dm.fundamentals is not None
-                # Verify relationship points to the correct fundamentals record
-                related_fund = retrieved_dm.fundamentals
-                assert related_fund.id == retrieved_fund.id
-
-            # Test UPDATE - modify some non-key fields
-            update_fields = {}
-            for col in dm_table.columns:
-                if not col.primary_key and not col.foreign_keys and isinstance(col.type, String):
-                    max_length = getattr(col.type, 'length', None)
-                    if max_length:
-                        new_value = f"U{test_id}"[:max_length]
-                    else:
-                        new_value = f"UPDATED_{test_id}"
-                    update_fields[col.name] = new_value
-                    setattr(retrieved_dm, col.name, new_value)
-
-            # Update a numeric field in Fundamentals
-            numeric_field = None
-            for col in fund_table.columns:
-                if isinstance(col.type, Numeric) and 'close' in col.name.lower():
-                    numeric_field = col.name
-                    setattr(retrieved_fund, col.name, 999.99)
-                    break
-
+            # UPDATE: Modify some fields
+            retrieved_company.company_ticker = "UPDATED"
+            retrieved_fund.close_price = 999.99
             session.commit()
 
             # Verify updates
-            if update_fields:
-                updated_dm = session.query(DailyMetrics).filter_by(**update_fields).first()
-                assert updated_dm is not None
-                for field_name, expected_value in update_fields.items():
-                    actual_value = getattr(updated_dm, field_name)
-                    assert actual_value == expected_value
+            updated_company = session.query(Company).filter_by(company_id=company.company_id).first()
+            assert updated_company.company_ticker == "UPDATED"
 
-            if numeric_field:
-                updated_fund = session.query(Fundamentals).filter_by(daily_metrics_id=dm.id).first()
-                actual_value = getattr(updated_fund, numeric_field)
-                # Handle Decimal comparison
-                if isinstance(actual_value, Decimal):
-                    actual_value = float(actual_value)
-                assert actual_value == 999.99
+            updated_fund = session.query(Fundamentals).filter_by(daily_metrics_id=dm.id).first()
+            assert float(updated_fund.close_price) == 999.99
 
-            # Test DELETE (cleanup)
+            # DELETE: Clean up test data (must respect FK constraints)
+            # Delete in order: fundamentals -> daily_metrics -> company/trade_date
             session.delete(retrieved_fund)
+            session.commit()
+
             session.delete(retrieved_dm)
+            session.commit()
+
+            session.delete(retrieved_company)
+            session.delete(retrieved_trade_date)
             session.commit()
 
 
@@ -363,7 +302,7 @@ class TestMigrations:
 
     def test_migration_files_exist(self):
         """Test that migration files exist."""
-        versions_dir = Path(Taro_path/"src/taro/migrations/versions")
+        versions_dir = Path(Taro_dir/"src/taro/migrations/versions")
         migration_files = list(versions_dir.glob("*.py"))
         assert len(migration_files) > 0, "No migration files found"
 

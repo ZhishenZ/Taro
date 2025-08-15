@@ -4,6 +4,7 @@ from flask import Flask, jsonify
 from sqlalchemy import create_engine, func
 from sqlalchemy.orm import sessionmaker
 from ..db.models import Base, DailyMetrics, Fundamentals
+from ..utils import get_database_url
 import os
 
 
@@ -12,14 +13,7 @@ def create_app():
     app = Flask(__name__)
 
     # PostgreSQL database configuration using shared models
-    database_url = os.getenv('DATABASE_URL')
-    if not database_url:
-        host = os.getenv('DB_HOST', 'postgres')  # Default to Docker service
-        port = os.getenv('DB_PORT', '5432')
-        name = os.getenv('DB_NAME', 'taro_stock')
-        user = os.getenv('DB_USER', 'taro_user')
-        password = os.getenv('DB_PASSWORD', 'taro_password')
-        database_url = f"postgresql://{user}:{password}@{host}:{port}/{name}"
+    database_url = get_database_url()
 
     app.config['DATABASE_URL'] = database_url
 
