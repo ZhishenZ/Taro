@@ -47,8 +47,9 @@ runs:
       shell: bash
       run: |
         ssh -i "~/.ssh/public_key.pem" ec2-user@${{ inputs.ec2_host }} << 'EOF'
-          cd ~
-          source venv/bin/activate
+          cd ${{ inputs.remote_path }}
+          python3.11 -m venv taro_venv
+          source taro_venv/bin/activate
           cd ${{ inputs.remote_path }}/Taro
           pip install -e .
         EOF
