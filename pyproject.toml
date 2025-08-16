@@ -27,4 +27,4 @@ dev = [
 where = ["src"]
 
 [project.scripts]
-taro = "taro.__main__:main"
+taro = "taro.cli.__main__:main"
