@@ -9,12 +9,15 @@ version = "0.1.0"
 readme = "README.md"
 dependencies = [
     "black",
+    "numpy<2.3.0",
     "PyYAML==6.0.1",
     "yfinance",
     "psycopg2-binary",
     "sqlalchemy",
     "alembic",
-    "python-dotenv"
+    "python-dotenv",
+    "flask",
+    "bokeh"
 ]
 
 [project.optional-dependencies]
@@ -27,4 +30,4 @@ dev = [
 where = ["src"]
 
 [project.scripts]
-taro = "taro.__main__:main"
+taro = "taro.cli.__main__:main"
