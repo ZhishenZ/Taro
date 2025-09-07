@@ -14,7 +14,8 @@ dependencies = [
     "psycopg2-binary",
     "sqlalchemy",
     "alembic",
-    "python-dotenv"
+    "python-dotenv",
+    "Flask"
 ]
 
 [project.optional-dependencies]
@@ -28,3 +29,4 @@ where = ["src"]
 
 [project.scripts]
 taro = "taro.__main__:main"
+analysis = "taro.analysis.app:main"

@@ -43,6 +43,17 @@ jobs:
           DB_PASSWORD: taro_password
           DB_NAME: taro_stock
           PYTHONPATH: ${{ github.workspace }}
-        run: | 
+        run: |
           python -m alembic upgrade head
           pytest tests/ -v
+
+      - name: Start analysis service for testing
+        env:
+          DB_HOST: localhost
+          DB_USER: taro_user
+          DB_PASSWORD: taro_password
+          DB_NAME: taro_stock
+        run: |
+          analysis &
+          sleep 5
+          curl -f http://localhost:5001/health || exit 1

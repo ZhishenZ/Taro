@@ -8,8 +8,8 @@ class DailyMetrics(Base):
     __tablename__ = "daily_metrics"
     __table_args__ = (UniqueConstraint('trade_date', 'ticker'),)
     id = Column(Integer, primary_key=True)
-    trade_date = Column(Date, nullable=False)  # FK to Market.trade_date (has not been implemented yet)
-    ticker = Column(String(10), nullable=False)  # FK to Company.ticker (has not been implemented yet)
+    trade_date = Column(Date, nullable=False)
+    ticker = Column(String(10), nullable=False)
     fundamentals = relationship("Fundamentals", back_populates="daily_metrics", uselist=False)
 
 class Fundamentals(Base):
