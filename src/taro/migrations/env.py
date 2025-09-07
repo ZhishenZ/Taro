@@ -5,7 +5,7 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 
-# Import models from db/models
+# Import models from shared db location
 from taro.db.models import Base
 
 # this is the Alembic Config object, which provides

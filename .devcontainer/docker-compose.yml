@@ -26,3 +26,20 @@ services:
       - PYTHONUNBUFFERED=1
     depends_on:
       - postgres
+
+  # analysis backend service
+  analysis:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    command: python -m taro.analysis.app
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DB_HOST=postgres
+      - DB_USER=taro_user
+      - DB_PASSWORD=taro_password
+      - DB_NAME=taro_stock
+    depends_on:
+      - postgres
+    ports:
+      - "5001:5001"
