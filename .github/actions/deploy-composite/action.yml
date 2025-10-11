@@ -64,6 +64,7 @@ runs:
       run: |
         ssh -i ~/.ssh/public_key.pem ubuntu@${{ inputs.ec2_host }} << 'EOF'
           cd ${{ inputs.remote_path }}/Taro/deploy_service
+          chmod +x remove_service.sh deploy_service.sh
           echo "Stopping existing service..."
           ./remove_service.sh
           echo "Deploying service..."
