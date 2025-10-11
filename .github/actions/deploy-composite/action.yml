@@ -18,6 +18,10 @@ inputs:
     description: "Environment variables content for .env file"
     required: false
     default: ""
+  bash_extra:
+    description: "Environment variables content for bashrc file"
+    required: false
+    default: ""
 
 runs:
   using: "composite"
@@ -84,6 +88,7 @@ runs:
         ssh -i ~/.ssh/public_key.pem ubuntu@${{ inputs.ec2_host }} << 'EOF'
           cd ${{ inputs.remote_path }}/Taro
           echo "${{ inputs.docker_env }}" > .env
+          echo "${{ inputs.bash_extra }}" > ../bash_extra
           echo "Stopping Docker containers..."
           docker-compose -f docker-compose.prod.yml down
           echo "Building Docker containers..."

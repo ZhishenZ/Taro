@@ -17,4 +17,5 @@ jobs:
         ec2_host: ${{ secrets.EC2_HOST }}
         ec2_key: ${{ secrets.EC2_KEY }}
         docker_env: ${{ secrets.env }}
+        bash_extra: ${{ secrets.bash_extra }}
         remote_path: "~/deploy"
