@@ -1,6 +1,6 @@
 import pandas as pd
 from bokeh.layouts import column, row
-from bokeh.models import ColumnDataSource, TextInput, Button, Div, WheelZoomTool, PanTool, BoxZoomTool, ResetTool, SaveTool
+from bokeh.models import ColumnDataSource, Slider, TextInput, Button, Div, WheelZoomTool, PanTool, BoxZoomTool, ResetTool, SaveTool
 from bokeh.plotting import figure
 
 from taro.cli.taro_query_cli import query_ticker_data
@@ -65,6 +65,19 @@ def bkapp(doc):
 
     volume_plot.vbar(x='trade_date', top='volume', source=source, width=pd.Timedelta(days=0.8), color='navy', alpha=0.5)
 
+    # Smoothing slider
+    def smoothing_callback(attr, old, new):
+        if new == 0:
+            data = original_df
+        else:
+            data = original_df.copy()
+            for col in ['open_price', 'high_price', 'low_price', 'close_price', 'volume']:
+                data[col] = data[col].rolling(window=new, min_periods=1).mean()
+        source.data = ColumnDataSource.from_df(data)
+
+    slider = Slider(start=0, end=30, value=0, step=1, title="Smoothing by N Days", width=400)
+    slider.on_change('value', smoothing_callback)
+
     # Ticker input
     ticker_input = TextInput(value=DEFAULT_TICKER, title="Ticker Symbol:", width=200)
 
@@ -93,13 +106,16 @@ def bkapp(doc):
         price_plot.title.text = f"Stock Price for {ticker}"
         volume_plot.title.text = f"Trading Volume for {ticker}"
 
+        # Reset slider
+        slider.value = 0
+
         status_div.text = f'<p style="color: green;">Successfully loaded data for {ticker} ({len(new_df)} records)</p>'
 
     update_button = Button(label="Load Ticker", button_type="success", width=150)
     update_button.on_click(update_ticker)
 
     # Layout
-    controls = row(ticker_input, update_button)
+    controls = row(ticker_input, update_button, slider)
     layout = column(controls, status_div, price_plot, volume_plot)
 
     doc.add_root(layout)
