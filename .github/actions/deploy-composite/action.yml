@@ -78,6 +78,7 @@ runs:
       run: |
         ssh -i ~/.ssh/public_key.pem ubuntu@${{ inputs.ec2_host }} << 'EOF'
           cd ${{ inputs.remote_path }}/Taro
+          cp ~/.env .
           echo "Stopping Docker containers..."
           docker-compose -f docker-compose.prod.yml down
           echo "Building Docker containers..."
