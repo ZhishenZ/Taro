@@ -14,7 +14,7 @@ inputs:
     description: "Whether to run deploy.sh on EC2 after upload"
     required: false
     default: "true"
-  env:
+  docker_env:
     description: "Environment variables content for .env file"
     required: false
     default: ""
@@ -82,7 +82,7 @@ runs:
       run: |
         ssh -i ~/.ssh/public_key.pem ubuntu@${{ inputs.ec2_host }} << 'EOF'
           cd ${{ inputs.remote_path }}/Taro
-          echo "${{ inputs.env }}" > .env
+          echo "${{ inputs.docker_env }}" > .env
           echo "Stopping Docker containers..."
           docker-compose -f docker-compose.prod.yml down
           echo "Building Docker containers..."
