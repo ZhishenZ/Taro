@@ -37,6 +37,7 @@ runs:
           mkdir -p ${{ inputs.remote_path }}
           cd ${{ inputs.remote_path }}
           rm -rf Taro
+          rm -rf venv
         EOF
 
     - name: Clone code to EC2
