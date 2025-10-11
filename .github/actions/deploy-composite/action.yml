@@ -14,6 +14,10 @@ inputs:
     description: "Whether to run deploy.sh on EC2 after upload"
     required: false
     default: "true"
+  env:
+    description: "Environment variables content for .env file"
+    required: false
+    default: ""
 
 runs:
   using: "composite"
@@ -29,7 +33,7 @@ runs:
     - name: Remove old code in EC2
       shell: bash
       run: |
-        ssh -i ~/.ssh/public_key.pem ec2-usr@${{ inputs.ec2_host }} << 'EOF'
+        ssh -i ~/.ssh/public_key.pem ubuntu@${{ inputs.ec2_host }} << 'EOF'
           mkdir -p ${{ inputs.remote_path }}
           cd ${{ inputs.remote_path }}
           rm -rf Taro
@@ -38,7 +42,7 @@ runs:
     - name: Clone code to EC2
       shell: bash
       run: |
-        ssh -i ~/.ssh/public_key.pem ec2-usr@${{ inputs.ec2_host }} << 'EOF'
+        ssh -i ~/.ssh/public_key.pem ubuntu@${{ inputs.ec2_host }} << 'EOF'
           cd ${{ inputs.remote_path }}
           git clone https://github.com/coffefever/Taro.git
         EOF
@@ -46,7 +50,7 @@ runs:
     - name: Install taro in EC2
       shell: bash
       run: |
-        ssh -i ~/.ssh/public_key.pem ec2-usr@${{ inputs.ec2_host }} << 'EOF'
+        ssh -i ~/.ssh/public_key.pem ubuntu@${{ inputs.ec2_host }} << 'EOF'
           cd ${{ inputs.remote_path }}
           if [ ! -d "venv" ]; then
             echo "Creating virtual environment at ${{ inputs.remote_path }}/venv"
@@ -62,7 +66,7 @@ runs:
     - name: Restart service with deploy scripts
       shell: bash
       run: |
-        ssh -i ~/.ssh/public_key.pem ec2-usr@${{ inputs.ec2_host }} << 'EOF'
+        ssh -i ~/.ssh/public_key.pem ubuntu@${{ inputs.ec2_host }} << 'EOF'
           cd ${{ inputs.remote_path }}
           source venv/bin/activate
           cd ${{ inputs.remote_path }}/Taro/deploy_service
@@ -76,9 +80,9 @@ runs:
     - name: Restart Docker containers
       shell: bash
       run: |
-        ssh -i ~/.ssh/public_key.pem ec2-usr@${{ inputs.ec2_host }} << 'EOF'
+        ssh -i ~/.ssh/public_key.pem ubuntu@${{ inputs.ec2_host }} << 'EOF'
           cd ${{ inputs.remote_path }}/Taro
-          cp ~/.env .
+          echo "${{ inputs.env }}" > .env
           echo "Stopping Docker containers..."
           docker-compose -f docker-compose.prod.yml down
           echo "Building Docker containers..."
@@ -91,7 +95,7 @@ runs:
       if: ${{ inputs.run_script == 'true' }}
       shell: bash
       run: |
-        ssh -i ~/.ssh/public_key.pem ec2-usr@${{ inputs.ec2_host }} << 'EOF'
+        ssh -i ~/.ssh/public_key.pem ubuntu@${{ inputs.ec2_host }} << 'EOF'
           cd ~
           source venv/bin/activate
           cd ${{ inputs.remote_path }}/Taro

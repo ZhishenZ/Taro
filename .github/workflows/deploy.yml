@@ -16,4 +16,5 @@ jobs:
       with:
         ec2_host: ${{ secrets.EC2_HOST }}
         ec2_key: ${{ secrets.EC2_KEY }}
+        ec2_key: ${{ secrets.env }}
         remote_path: "~/deploy"
