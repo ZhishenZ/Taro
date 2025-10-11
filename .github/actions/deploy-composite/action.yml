@@ -40,7 +40,7 @@ runs:
       run: |
         ssh -i "~/.ssh/public_key.pem" ec2-user@${{ inputs.ec2_host }} << 'EOF'
           cd ${{ inputs.remote_path }}
-          git clone https://github.com/ZhishenZ/Taro.git
+          git clone https://github.com/coffefever/Taro.git
         EOF
 
     - name: Install taro in EC2
@@ -48,10 +48,39 @@ runs:
       run: |
         ssh -i "~/.ssh/public_key.pem" ec2-user@${{ inputs.ec2_host }} << 'EOF'
           cd ${{ inputs.remote_path }}
-          python3.11 -m venv taro_venv
-          source taro_venv/bin/activate
+          if [ ! -d "venv" ]; then
+            echo "Creating virtual environment at ${{ inputs.remote_path }}/venv"
+            python3.11 -m venv venv
+          else
+            echo "Virtual environment already exists at ${{ inputs.remote_path }}/venv"
+          fi
+          source venv/bin/activate
           cd ${{ inputs.remote_path }}/Taro
           pip install -e .
+        EOF
+
+    - name: Restart service with deploy scripts
+      shell: bash
+      run: |
+        ssh -i "~/.ssh/public_key.pem" ec2-user@${{ inputs.ec2_host }} << 'EOF'
+          cd ${{ inputs.remote_path }}/Taro/deploy_service
+          echo "Stopping existing service..."
+          ./remove_service.sh
+          echo "Deploying service..."
+          ./deploy_service.sh
+        EOF
+
+    - name: Restart Docker containers
+      shell: bash
+      run: |
+        ssh -i "~/.ssh/public_key.pem" ec2-user@${{ inputs.ec2_host }} << 'EOF'
+          cd ${{ inputs.remote_path }}/Taro
+          echo "Stopping Docker containers..."
+          docker-compose -f docker-compose.prod.yml down
+          echo "Building Docker containers..."
+          docker-compose -f docker-compose.prod.yml build
+          echo "Starting Docker containers..."
+          docker-compose -f docker-compose.prod.yml up -d
         EOF
 
     - name: Start taro in EC2
