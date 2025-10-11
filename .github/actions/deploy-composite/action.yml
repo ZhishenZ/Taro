@@ -50,7 +50,7 @@ runs:
           cd ${{ inputs.remote_path }}
           if [ ! -d "venv" ]; then
             echo "Creating virtual environment at ${{ inputs.remote_path }}/venv"
-            python3.11 -m venv venv
+            python3 -m venv venv
           else
             echo "Virtual environment already exists at ${{ inputs.remote_path }}/venv"
           fi
